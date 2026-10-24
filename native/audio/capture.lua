@@ -12,7 +12,7 @@ local Capture = {}
 Capture.__index = Capture
 
 function Capture.new()
-    local self = setmetadatatable({}, Capture)
+    local self = setmetatable({}, Capture)
 
     self.lib = ffi.load("./native/libcapture.so")
     self.buffer = ffi.new("float[4096]")
