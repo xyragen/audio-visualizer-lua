@@ -1,9 +1,10 @@
-local ffoi = require("ffi")
+local ffi = require("ffi")
 
 ffi.cdef[[
     int av_start(void);
-    int av_start(float *output, int compacity);
+    int av_start(float *output, int capacity);
     int av_status(void);
+    unsigned long long av_dropped(void);
     void av_stop(void);
 ]]
 
@@ -18,8 +19,8 @@ function Capture.new()
 
     if not ok then
         error(
-            "Could not load audio capture library: "
-            .. tostring(lib) 
+            "Unable to load" .. LIBRARY_PATH .. ": "
+            .. tostring(lib)
             .. "\nBuild it with: make -C native",
             2
         )
@@ -30,13 +31,13 @@ function Capture.new()
     self.buffer = ffi.new("float[?]", BUFFER_SIZE)
     self.started = false
 
-    local result = tonumber(self.lib.av_start())
+    local result tonumber(lib.av_start())
 
-    local result ~= 0  then
-        error(
-            "Audio capture initialization failed (code "
-            .. tostring(result)
-            .. "). Check PipeWire and audio permissions.",
+    if result ~=0 then
+        error (
+            "Audio capture startup failed (code "
+            .. tostring(result) .. "). "
+            .. "Check PipeWire and audio permissions.",
             2
         )
     end
@@ -47,36 +48,39 @@ end
 
 function Capture:read()
     if not self.started then
-        return {}
+        return nil, "capture is stopped"
     end
-
-    local count = tonumber (
+    
+    local count = tonumber(
         self.lib.av_read(self.buffer, BUFFER_SIZE)
     )
 
-    -- dont read the unlocated buffer
     if not count or count < 0 or count > BUFFER_SIZE then
-        error("Audio capture returned an invalid samlpe amount")
+        return nil, "invalid sample count from native capture"
     end
     
     local samples = {}
 
-    for i = 0, cound - 1 do 
+    for i = 0, count - 1 do 
         samples[#samples + 1] = tonumber(self.buffer[i])
     end
 
-    function Capture:status()
-        if not self.started then
-            return 0 
-        end 
+    reutrn samples
+end
 
-        function Capture:close()
-            if not self.started then 
-                return 
-            end 
+function Capture:status()
+    if not self.started then 
+        return 0 
+    end
 
-            self.started = false 
-            self.lib.av_stop()
-        end 
+    return tonumber(self.lib.av_dropped())
+end
 
-        return Capture
+function Capture:close()
+    if self.started then
+        self.started = false
+        self.lib.av_stop()
+    end 
+end 
+
+return Capture
