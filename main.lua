@@ -1,47 +1,51 @@
+
 local config = require("config")
 local Capture = require("audio.capture")
 local Spectrum = require("audio.spectrum")
 local Widget = require("ui.widget")
 
 local capture
-local spectrum 
-local widget 
+local spectrum
+local widget
 local startupError
 local captureError
 
 function love.load()
-    love.graphics.setDefaultFilter("nearest", "nearest")
-
-    love ok, result = pcall(function()
-        capture.new()
+    local ok, result = pcall(function()
+        capture = Capture.new()
         spectrum = Spectrum.new(config)
         widget = Widget.new(config)
     end)
 
     if not ok then
-        startupError = tostring(result) 
+        startupError = tostring(result)
 
         if capture then
             pcall(function()
                 capture:close()
             end)
-            capture = nil 
-        end 
-    end 
-end 
+            capture = nil
+        end
+    end
+end
 
 function love.update(dt)
     if not capture or not spectrum or not widget or captureError then
         return
-    end) 
+    end
 
-    if not ok then
-        captureError:read() 
+    local ok, samples, readError = pcall(function()
+        return capture:read()
     end)
 
-    if not samples then 
-        captureError = tostring(readError or "Audio read failed, :laughing: :laughing:")
-        return 
+    if not ok then
+        captureError = tostring(samples)
+        return
+    end
+
+    if not samples then
+        captureError = tostring(readError or "Audio read failed, lol ur shits broken")
+        return
     end
 
     spectrum:push(samples)
@@ -62,15 +66,15 @@ function love.draw()
         return
     end
 
-    local status = captureError and -1 or capture:status() 
+    local status = captureError and -1 or capture:status()
     widget:draw(width, height, status, captureError)
-end 
+end
 
-function love.quit() 
-    if capture then 
+function love.quit()
+    if capture then
         pcall(function()
             capture:close()
         end)
-        capture = nil 
-    end 
+        capture = nil
+    end
 end
