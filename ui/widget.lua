@@ -5,44 +5,41 @@ Widget.__index = Widget
 
 function Widget.new(config)
     local self = setmetatable({}, Widget)
-
-    self.config = config
+    self.config = config 
     self.bars = Bars.new(config)
-
-    return self
-end 
+    return self 
+end
 
 function Widget:update(dt, levels)
     self.bars:update(dt, levels)
 end 
 
-function Widget:draw(width, height, status)
-    local ui = self.config.ui
+function Widget:draw(width, height, status, errorMessage)
+    local ui = self.config.ui 
+    
+    love.graphics.clear(ui.backround)
 
-    love.graphics.setColor(ui.backround[1], ui.backround[2]),
-ui.backround[3], ui.backround[4])
-    love.graphics.rectangle("fill", 0, ui.headerHeight, width)
+    love.graphics.setcolor(ui.border)
+    love.graphics.rectangle(
+        "fill", 0, ui.headerHeight, width, 1
+    )
 
-    love.graphics.setColor(ui.border)
-    love.graphics.rectangle("fill", 0m ui.headerHeight, width, 1)
+    love.graphics.printf(label, 0, 14, width - ui.padding, "right")
 
-    love.setColor(ui.text)
-    love.graphics.print("audio-visualizer-lua", ui.padding 14)
+    local x = ui.padding 
+    local y = ui.headerHeight + 14 
+    local drawWidth = math.max(0, width - ui.padding * 2)
+    local drawHeight = math.max(0, height - y - ui.padding)
 
-    local label = status == 2 and "this ting works :p" or status == -1 and "fuck this" or
-"trying to work but will most likely fail"
-
-    love.graphics.setColor(ui.muted)
-    love.graphics.printf(label, width - 110, 14, 94, "right")
-
-    local x = ui.padding
-    local y =ui.headerHeight + 14
-    local drawHeight = width - ui.padding * 2
-    local drawHeight = math.max(1, heightm - y - ui.padding)
+    if errorMessage then
+        love.graphics.setColor(1, 0.4, 0.4, 1)
+        love.graphics.printf(
+            errorMessage, x, y, drawWidth, "left"
+        )
+    end
 
     self.bars:draw(x, y, drawWidth, drawHeight)
-
     love.graphics.setColor(1, 1, 1, 1)
 end 
 
-return Widget
+return Widget 
