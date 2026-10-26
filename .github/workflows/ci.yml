@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            luajit \
+            libpipewire-0.3-dev \
+            pkg-config \
+            build-essential
+
+      - name: Check Lua syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            luajit -b "$file" /tmp/lua-check.luac
+          done < <(find . -name '*.lua' \
+            -not -path './.git/*' -print0)
+
+      - name: Build native capture library
+        run: |
+          make -C native clean
+          make -C native
+
+      - name: Verify shared library
+        run: |
+          test -f native/libcapture.so
+          ldd native/libcapture.so
