@@ -4,26 +4,26 @@ local Capture = require("audio.capture")
 local Spectrum = require("audio.spectrum")
 local Widget = require("ui.widget")
 
-local capture
-local spectrum
-local widget
-local startupError
-local captureError
+local capture, spectrum, widget
+local startupError, captureError
 
 function love.load()
-    local ok, result = pcall(function()
-        capture = Capture.new()
-        spectrum = Spectrum.new(config)
-        widget = Widget.new(config)
+    love.graphics.setDefaultFilter("nearest", "nearest")
+
+    local ok, err = pcall(function()
+        local newCapture = Capture.new()
+        local newSpectrum = Spectrum.new(config)
+        local newWidget = Widget.new(config)
+
+        capture = newCapture
+        spectrum = newSpectrum
+        widget = newWidget
     end)
 
     if not ok then
-        startupError = tostring(result)
-
+        startupError = tostring(err)
         if capture then
-            pcall(function()
-                capture:close()
-            end)
+            pcall(function() capture:close() end)
             capture = nil
         end
     end
@@ -34,7 +34,7 @@ function love.update(dt)
         return
     end
 
-    local ok, samples, readError = pcall(function()
+    local ok, samples, err = pcall(function()
         return capture:read()
     end)
 
@@ -44,7 +44,7 @@ function love.update(dt)
     end
 
     if not samples then
-        captureError = tostring(readError or "Audio read failed, lol ur shits broken")
+        captureError = tostring(err or "Audio read failed")
         return
     end
 
@@ -72,9 +72,7 @@ end
 
 function love.quit()
     if capture then
-        pcall(function()
-            capture:close()
-        end)
+        pcall(function() capture:close() end)
         capture = nil
     end
 end
