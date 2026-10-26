@@ -39,6 +39,7 @@ return {
     audio = {
         sampleRate = 48000,
         fftSize = 2048,
+        hopSize = 512,
         minFrequency = 40,
         maxFrequency = 16000
     }
