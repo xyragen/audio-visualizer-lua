@@ -1,10 +1,11 @@
 function love.conf(t)
     t.identity = "audio-visualizer-lua"
-    t.version = "11.5"
-    t.window.width = 560
-    t.window.height = 260
-    t.window.minWidth = 240
-    t.window.minHeight = 140
+    t.version = "11.4"
+
+    t.window.title = "Audio Visualizer Lua"
+    t.window.width = 1000
+    t.window.height = 560
     t.window.resizable = true
-    t.window.vync = 1
+    t.window.vsync = 1
+    t.console = true
 end
