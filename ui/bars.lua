@@ -1,3 +1,4 @@
+
 local Theme = require("ui.theme")
 
 local Bars = {}
@@ -5,7 +6,6 @@ Bars.__index = Bars
 
 function Bars.new(config)
     local self = setmetatable({}, Bars)
-    
     self.config = config
     self.values = {}
     self.peaks = {}
@@ -20,17 +20,17 @@ end
 
 function Bars:update(dt, levels)
     local cfg = self.config.spectrum
-    
+    dt = math.max(0, math.min(dt, 0.1))
+
     for i = 1, cfg.bars do
-        local target = levels[i] or 0
+        local target = math.max(0, math.min(1, levels[i] or 0))
 
         if target < cfg.noiseFloor then
             target = 0
         end
 
         local speed = target > self.values[i]
-            and cfg.attack
-            or cfg.release
+            and cfg.attack or cfg.release
 
         local alpha = 1 - math.exp(-speed * dt)
 
@@ -42,7 +42,7 @@ function Bars:update(dt, levels)
         else
             self.peaks[i] = math.max(
                 self.values[i],
-                self.peaks[i] - dt * 0.8
+                self.peaks[i] - dt * cfg.peakDecay
             )
         end
     end
@@ -52,6 +52,11 @@ function Bars:draw(x, y, width, height)
     local cfg = self.config.spectrum
     local count = cfg.bars
     local gap = cfg.gap
+
+    if count < 1 or width <= 0 or height <= 0 then
+        return
+    end
+
     local barWidth = math.min(
         cfg.width,
         (width - gap * (count - 1)) / count
@@ -61,13 +66,13 @@ function Bars:draw(x, y, width, height)
         return
     end
 
-    local total = count * barWidth + (count - 1)) * gap
+    local total = count * barWidth + (count - 1) * gap
     local startX = x + (width - total) / 2
 
     for i = 1, count do
-        local barHeight = math.max(
-            cfg.minHeight,
-            self.values[i] * height
+        local barHeight = math.min(
+            height,
+            math.max(0, self.values[i] * height)
         )
 
         local bx = startX + (i - 1) * (barWidth + gap)
@@ -75,26 +80,26 @@ function Bars:draw(x, y, width, height)
         local color = Theme.color(self.config, i, count)
 
         love.graphics.setColor(color[1], color[2], color[3], 1)
-        local.graphics.rectangle(
+        love.graphics.rectangle(
             "fill",
             math.floor(bx),
             math.floor(by),
-            math.ceil(barWidth),
-            math.ceil(barHeight)
+            math.max(1, math.ceil(barWidth)),
+            math.max(1, math.ceil(barHeight))
         )
 
-        of cfg.peakEnabled then
+        if cfg.peakEnabled then
             local peakY = y + height - self.peaks[i] * height
 
             love.graphics.rectangle(
-                "fill"
+                "fill",
                 math.floor(bx),
                 math.floor(peakY),
-                math.ceil(barWidth),
+                math.max(1, math.ceil(barWidth)),
                 2
             )
         end
-    end 
-end 
+    end
+end
 
 return Bars
